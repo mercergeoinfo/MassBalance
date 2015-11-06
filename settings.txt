@@ -1,0 +1,10 @@
+Input Data Folder = ./InData/
+Output Folder = ./OutData
+Probing = SG_Probe_2013.csv
+Density = SG_Density_2013.csv
+Stakes = sg_abl_2013.csv
+DEM = ./DEM/SG_DEM_2010.tif
+MSK = ./DEM/SG_DEM_2010_mask.tif
+Plot DEM? = y
+Plot results? = y
+Detrend = n
