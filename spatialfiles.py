@@ -925,3 +925,90 @@ def datawrite(outdata,demdata,meta,name,outDir):
 	datout = None
 	print "datawrite returns: ",filnm
 	return filnm
+#
+def vrtMaker(fileName):
+	'''Read csv coordinate file and create vrt header
+	To use: Zfield, namevrt = vrtMaker(datafile)'''
+	print '\n'*2,'*'*10
+	print 'Read ',fileName
+	InFile = open(fileName,'rb')
+	Headers = InFile.next().strip().split(',')
+	InFile.close()
+	warn = 0
+	for i in range(len(Headers)):
+		if len(Headers[i]) < 2:
+			print '"gdal_grid" cannot parse single letter column headers.\n'
+			print 'If you intend to pass this column as x,y or z then change the column name.'
+			warn = 1
+		if ' ' in Headers[i] or '.' in Headers[i]:
+			print '"gdal_grid" cannot parse column headers with spaces or dots.\n'
+			print 'If you intend to pass this column as x,y or z then change the column name.\n'
+			warn = 1
+	print 'File Headers:\n'
+	for i in Headers:
+		print i
+	print '\n'
+	if warn == 1:
+		print 'THERE ARE BAD COLUMN HEADERS IN YOUR INPUT FILE\n'
+		ans = cont()
+		if ans == 1:
+			print '\nLeaving makevrt function\n'
+			return 0
+	Xcol = ''
+	Ycol = ''
+	Zcol = ''
+	useAns = ['y','n']
+	useFirst = ''
+	while useFirst not in useAns:
+		useFirst = raw_input('Use first three fields as Easting, Northing and Z? (y/n): ')
+	if useFirst == 'n':
+		while Xcol not in Headers:
+			Xcol = raw_input('Enter column for "Easting": ')
+		while Ycol not in Headers:
+			Ycol = raw_input('Enter column for "Northing": ')
+		while Zcol not in Headers and Zcol !='none':
+			print Zcol
+			Zcol = raw_input('Enter column for Z or "none": ')
+	elif useFirst == 'y':
+		Xcol = 'field_1'
+		Ycol = 'field_2'
+		Zcol = 'field_3'
+	#
+	epsgList = ['3006','3021','7030']
+	nameList = ['SWEREF99TM','RT90 2,5gV','WGS84']
+	for i in range(len(nameList)):
+		print nameList[i],' = ',epsgList[i]
+	epsg = ''
+	while epsg not in epsgList:
+		epsg = raw_input('Enter epsg code for source file coordinate system: ')
+	#
+	namevrt = makevrt(fileName,epsg,Xcol,Ycol,Zcol)
+	#
+	return Zcol, namevrt, epsg
+#
+def idw(dataFile,DEM):
+	'''Implement gdalgrid for IDW'''
+	# Set output directory
+	namstr,ext_,outDir,full_ = namer(dataFile)
+	outDir = os.path.join(outDir,namstr)
+	if not os.path.exists(outDir):
+		os.makedirs(outDir)
+	# Make vrt for extrapolation
+	Zfield, namevrt, epsg = vrtMaker(dataFile)
+	# Get metadata from DEM for setting extrapolation extents
+	_, meta, metadata = rasterImport(DEM)
+	txel = meta['corners']['ll'][0]
+	txeu = meta['corners']['ur'][0]
+	tyel = meta['corners']['ll'][1]
+	tyeu = meta['corners']['ur'][1]
+	outsider = meta['dimensions']['rows']
+	outsidec = meta['dimensions']['cols']
+	# Parameters used in IDW
+	power = 2.0
+	smoothing = 2.0
+	# Create gdal command for IDW
+	layer = namestr
+	idwfile = os.path.join(outDir, namestr + '_idw.tif')
+	gridout = "gdal_grid -a invdist:power={0:0.2f}:smoothing={1:0.2f} -txe {2:0.0f} {3:0.0f} -tye {4:0.0f} {5:0.0f} -outsize {5:0.0f} {6:0.0f} -a_srs EPSG:{7} -of GTiff -ot Float64 -l {8} {9} {10}".format(power, smoothing, txel, txeu, tyel, tyeu, outsider, outsidec, epsg, layer, namevrt, idwfile)
+	os.system(gridout)
+	return idwfile

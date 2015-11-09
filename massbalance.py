@@ -60,7 +60,7 @@ from standard import *
 from spatialfiles import *
 from kriging import *
 #
-# To do: simple extrapolation not implemented yet.
+# To do: test IDW (09/11/2015)
 ## FUNCTIONS
 #
 def envset(*args):
@@ -87,19 +87,19 @@ def envset(*args):
 		if os.path.exists(args[0]):
 			envFile = args[0]
 	else:
-		print '\nList of files in ', curLoc,'\n'
-		for i in curList:
-			if not os.path.isdir(i):
-				print i
 		envFile = './settings.txt'
 		while not os.path.exists(envFile):
+			print '\nList of files in ', curLoc,'\n'
+			for i in curList:
+				if not os.path.isdir(i):
+					print i
 			envFile = raw_input('\nEnter name of file containing environment settings(txt): ')
 	settings = {}
 	InFile = open(envFile,'rb')
 	# Check contents and set up dictionary
 	for row in InFile:
 		line = row.strip().split('=')
-		print line
+		#print line
 		settings[line[0].strip()]=line[1].strip()
 	# Folder containing data files
 	if 'Input Data Folder' not in settings:
@@ -301,19 +301,28 @@ def convertProbing(settings, densityVectors, densityFiles):
 #
 #
 def krigAcc(settings, sourceFolder, sourceFile):
-	'''3. KRIG ACCUMULATION FILE ACROSS DEM
+	'''3. KRIG OR EXTRAPOLATE ACCUMULATION FILE ACROSS DEM
 	Requires "settings" and sourceFolder, sourceFile'''
 	#
 	print krigAcc.__doc__,'\n','_'*20,'\n'
 	time_three = datetime.now()
 	print time_three.strftime('\n3. started at day:%j %H:%M:%S')
-	# Call kriging function
 	DEM = settings['DEM']
 	dataFile = os.path.join(sourceFolder,sourceFile)
-	krigedFile = kriging(dataFile,DEM)
-	_,_,Dir,_ = namer(krigedFile)
+	# Ask user whether to krig or run IDW
+	krgorext = ""
+	while krgorext not in ["k","i"]:
+		krgorext = raw_input("Krig (k) a surface or use inverse distance weighting (i)? ")
+	if krgorext == "k"
+		# Call kriging function
+		outFile = kriging(dataFile,DEM)
+		_,_,Dir,_ = namer(krigedFile)
+	else:
+	# Call idw function
+		outFile = idw(dataFile,DEM)
+		_,_,Dir,_ = namer(krigedFile)
 	print 'Output to ',Dir,'\n'
-	return krigedFile
+	return outFile
 #
 #
 def sliceDEM(settings,slice=20):
@@ -428,15 +437,23 @@ def krigAbl(settings, sourceFolder, sourceFile):
 	print krigAbl.__doc__,'\n','_'*20,'\n'
 	time_seven = datetime.now()
 	print time_seven.strftime('\n7. started at day:%j %H:%M:%S')
-	#settings['Input Data Folder'] = sourceFolder
-	#settings['Data Files'] = sourceFile
-	# Call kriging function
 	DEM = settings['DEM']
 	dataFile = os.path.join(sourceFolder,sourceFile)
-	krigedFile = kriging(dataFile,DEM)
-	_,_,Dir,_ = namer(krigedFile)
+	# Ask user whether to krig or run IDW
+	krgorext = ""
+	while krgorext not in ["k","i"]:
+		krgorext = raw_input("Krig (k) a surface or use inverse distance weighting (i)? ")
+	if krgorext == "k"
+		# Call kriging function
+		outFile = kriging(dataFile,DEM)
+		_,_,Dir,_ = namer(krigedFile)
+	else:
+	# Call idw function
+		outFile = idw(dataFile,DEM)
+		_,_,Dir,_ = namer(krigedFile)
 	print 'Output to ',Dir,'\n'
-	return krigedFile
+	return outFile
+
 #
 #
 def abl2bands(settings,krigedFile,demSlcDir):

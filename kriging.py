@@ -144,7 +144,6 @@ def kriging(*args,**kwargs):
 			print "Start kriging with data from %s\nand given grid definition." %(Datafile)
 		except:
 			return 1
-
 	# Get data to krige
 	try:
 		Xin,Yin,Zin = InDataArray(Datafile,chc)
@@ -317,7 +316,7 @@ def kriging(*args,**kwargs):
 		modelGood = raw_input("Are you sure you want to continue with this model? ")
 	# Krige data
 	Zkg,G_mod_export,G_mod_export_rsqrd,model = krig(nugget,sill,range_,D,Z,X,Y,Xg,Yg,rx,ry,lag,max_lags,DE,GE,modelnr,alpha)
-	print np.min(Zkg), np.mean(Zkg), np.max(Zkg)
+	print np.nanmin(Zkg), np.nanmean(Zkg), np.nanmax(Zkg)
 	# Reverse log transform
 	if trana  in yn[0]:
 		#for x in np.nditer(Zkg, op_flags=['readwrite']):
@@ -1058,8 +1057,10 @@ def krigplot(Xg1,Yg1,X,Y,Z,DEMmdZ_,name,outDir):
 	'''Plot kriged data as map'''
 	# Get range of values for colour scale
 	#print name,type(DEMmdZ_)
-	currentmin = DEMmdZ_.min()
-	currentmax = DEMmdZ_.max()
+	#currentmin = DEMmdZ_.min()
+	#currentmax = DEMmdZ_.max()
+	currentmin = np.nanmin(DEMmdZ_[DEMmdZ_ != np.inf])
+	currentmax = np.nanmax(DEMmdZ_[DEMmdZ_ != np.inf])
 	print "Kriged values range from {0:.3f} to {1:.3f}\n".format(currentmin, currentmax)
 	plt.figure(figsize=(16,8),facecolor='w')
 	if currentmin > -1.5 and currentmax < 1.5:
