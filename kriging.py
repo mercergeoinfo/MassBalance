@@ -58,7 +58,6 @@ from matplotlib.backends.backend_pdf import PdfPages
 from standard import *
 from spatialfiles import *
 #
-# NOT WORKING YET dem meta data still required.
 def kriging(*args,**kwargs):
 	'''Main kriging starter function
 	If only two arguments passed:  outfile = kriging(Datafile,DEM)
@@ -117,6 +116,7 @@ def kriging(*args,**kwargs):
 		try:
 			Datafile = args[0]
 			DEM = args[1]
+			alpha = 2.0
 			print "Run kriging using implied arguments %s\nand %s" %(Datafile, DEM)
 		except:
 			print "No named arguments and no implied arguments"
@@ -319,11 +319,12 @@ def kriging(*args,**kwargs):
 	Zkg,G_mod_export,G_mod_export_rsqrd,model = krig(nugget,sill,range_,D,Z,X,Y,Xg,Yg,rx,ry,lag,max_lags,DE,GE,modelnr,alpha)
 	print np.min(Zkg), np.mean(Zkg), np.max(Zkg)
 	# Reverse log transform
-	if trana == 'y':
+	if trana  in yn[0]:
 		#for x in np.nditer(Zkg, op_flags=['readwrite']):
 			#x[...] = 10 ** x
 		Zkg = np.exp(Zkg)
 		print np.min(Zkg), np.mean(Zkg), np.max(Zkg)
+		Z = np.exp(Z)
 	#
 	try:
 		Z_ = Zkg.reshape(ry,rx)
@@ -396,7 +397,7 @@ def kriging(*args,**kwargs):
 	if plotson == 'y':
 	## Plot kriged data
 		name = namstr + '_data'
-		krigplot(Xg1,Yg1,X,Y,DEMmaskedZ_,name,outDir)
+		krigplot(Xg1,Yg1,X,Y,Z,DEMmaskedZ_,name,outDir)
 	sys.stdout.flush()
 	print 'Data column kriged: ', ZcolName
 	print '\a'
@@ -699,9 +700,10 @@ def varMod_TRS(nugget,sill,D,range_):
 	G_mod_2 = slope*(G_mod_1 == 0)
 	G_mod = G_mod_1 + G_mod_2
 	return G_mod
-## Taken from http://stackoverflow.com/questions/7997152/python-3d-polynomial-surface-fit-order-dependent
+#
 def polyfit2d(x, y, z, order=2):
-	'''Fit a polynomial to a surface (for detrending kriging data)'''
+	'''Fit a polynomial to a surface (for detrending kriging data)
+	 Taken from http://stackoverflow.com/questions/7997152/python-3d-polynomial-surface-fit-order-dependent'''
 	print '\nCreate polynomial trend surface'
 	ncols = (order + 1)**2
 	G = np.zeros((x.size, ncols))
@@ -712,10 +714,9 @@ def polyfit2d(x, y, z, order=2):
 	m,_,_,_ = np.linalg.lstsq(G, z)
 	return m
 #
-#
-## Taken from http://stackoverflow.com/questions/7997152/python-3d-polynomial-surface-fit-order-dependent
 def polyval2d(x, y, m):
-	'''Apply polynomial to 3D data (for detrending kriging data)'''
+	'''Apply polynomial to 3D data (for detrending kriging data)
+	Taken from http://stackoverflow.com/questions/7997152/python-3d-polynomial-surface-fit-order-dependent'''
 	print '\nApply polynomial trend surface'
 	order = int(np.sqrt(len(m))) - 1
 	ij = itertools.product(range(order+1), range(order+1))
@@ -723,7 +724,6 @@ def polyval2d(x, y, m):
 	for a, (i,j) in zip(m, ij):
 		z += a * x**i * y**j
 	return z
-#
 #
 def detrend(X,Y,Z,Xg,Yg,Xg1):
 		## Call function to create trend polynomial
@@ -752,13 +752,11 @@ def detrend(X,Y,Z,Xg,Yg,Xg1):
 		Z_retrend = Z_retrend_in.reshape(np.shape(Xg1))
 		return Zdtr, Z_retrend
 #
-#
 def fitFunc(xvec,yvec,fitOrder=1):
 	"""Create least squares fitted function through data"""
 	z = np.polyfit(np.array(xvec), np.array(yvec), fitOrder)
 	p = np.poly1d(z)
 	return p
-#
 #
 def maplot(x,y,z,c,m,name,outDir):
 	plt.figure()
@@ -770,10 +768,8 @@ def maplot(x,y,z,c,m,name,outDir):
 	plt.title(name)
 	indatplt = name + '_dataplot.png'
 	plt.savefig(os.path.join(outDir,indatplt))
-	#NEW
 	plt.close()
 	return 0
-#
 #
 def map3d(x,y,z,c,valmin,valmax,name,outDir):
 	'''Plot 3D map (kriging)'''
@@ -781,7 +777,6 @@ def map3d(x,y,z,c,valmin,valmax,name,outDir):
 	h = plt.pcolor(x,y,z,cmap=c, vmax = valmax, vmin = valmin)
 	plt.autoscale(enable=True, axis='both', tight=False)
 	plt.savefig(os.path.join(outDir, (name + '_data3d.png')))
-	#NEW
 	plt.close()
 	return 0
 #
@@ -813,7 +808,6 @@ def logTranHist(Zin,outfolder,name):
 	plt.legend()
 	#plt.show()
 	plt.savefig(os.path.join(outfolder,(name +'logHist.png')))
-	#NEW
 	plt.close()
 	return Zlog
 #
@@ -832,10 +826,8 @@ def semvar(Z,D,G,name,outDir):
 	plt.title(titletext)
 	plt.ylabel('Variogram')
 	plt.savefig(os.path.join(outDir,(name + '_semivar.png')))
-	#NEW
 	plt.close()
 	return 0
-#
 #
 def varestplt(DE,GE,GEest,GErsqrd,nuggest,sillest,rangeest,name,outDir,G_mod_export,G_mod_export_rsqrd,model):
 	'''Plot variogram estimate (kriging)'''
@@ -864,42 +856,8 @@ def varestplt(DE,GE,GEest,GErsqrd,nuggest,sillest,rangeest,name,outDir,G_mod_exp
 	plt.text(max(DE)*0.8,max(GE)*0.5,GErsqrdtext,bbox={'facecolor':'white', 'alpha':0.5, 'pad':10})
 	plt.text(max(DE)*0.8,max(GE)*0.7,G_modrsqrdtext,bbox={'facecolor':'white', 'alpha':0.5, 'pad':10})
 	plt.savefig(os.path.join(outDir,(name + '_' + model+ '.png')))
-	#NEW
 	plt.close()
 	return 0
-#
-#
-def krigplot(Xg1,Yg1,X,Y,DEMmdZ_,name,outDir):
-	'''Plot kriged data as map'''
-	# Get range of values for colour scale
-	#print name,type(DEMmdZ_)
-	currentmin = DEMmdZ_.min()
-	currentmax = DEMmdZ_.max()
-	plt.figure(figsize=(16,8),facecolor='w')
-	if currentmin <0 and currentmax <6:
-		#h = pcolor(Xg1,Yg1,DEMmdZ_,cmap=plt.cm.RdBu, vmax = 5, vmin = -5)
-		h = plt.pcolor(Xg1,Yg1,DEMmdZ_,cmap=plt.cm.RdBu, vmax = 1.5, vmin = -1.5)
-	elif currentmax <6:
-		h = plt.pcolor(Xg1,Yg1,DEMmdZ_,cmap=plt.cm.Reds, vmax = 5, vmin = 0)
-	else:
-		soddincmmap = plt.cm.Blues
-		soddincmmap.set_under(color='k')
-		h = plt.pcolor(Xg1,Yg1,DEMmdZ_,cmap=soddincmmap, vmax = int(currentmax), vmin = int(currentmin))
-	titletext = name + ' Kriging Estimate'
-	plt.title(titletext)
-	plt.xlabel('x-Coordinates')
-	plt.ylabel('y-Coordinates')
-	plt.colorbar()
-	plt.axis("equal")
-	plt.plot(X,Y,'.k',hold=True)
-	krigtext = 'Min = %f\nMax = %f' % (currentmin,currentmax)
-	plt.text(min(X)+((max(X)-min(X))*0.9),min(Y)+((max(Y)-min(Y))*0.9),krigtext,bbox={'facecolor':'white', 'alpha':0.5, 'pad':10})
-	krigplt = name + '_krigplot.png'
-	plt.savefig(os.path.join(outDir,krigplt))
-	#NEW
-	plt.close()
-	return
-#
 #
 def krigvarplot(Xg1,Yg1,SK,name,outDir):
 	'''Plot variance (kriging)'''
@@ -913,7 +871,6 @@ def krigvarplot(Xg1,Yg1,SK,name,outDir):
 	plt.plot(X,Y,'ok',hold=True)
 	krigvarplt = name + '_krigvarplot.png'
 	plt.savefig(os.path.join(outDir,krigvarplt))
-	#NEW
 	plt.close()
 	return
 #
@@ -1067,24 +1024,6 @@ def DemImport(demfile):
 	#print 'demmeta:\n',demmeta[0],'\n'
 	return demdata,Xg,Yg,Xg1,Yg1,rx,ry,demmeta
 #
-def datawrite(outdata,demdata,meta,name,outDir):
-	'''Write an array of grid data to a georeferenced raster file'''
-	#meta = ['projection','geotransform','driver','rows','columns','nanvalue']
-	filnm = os.path.join(outDir,(name + '.tif'))
-	datdriver = gdal.GetDriverByName( "GTiff" )
-	datout = datdriver.Create(filnm,meta[5],meta[4],1,gdal.GDT_Float32)
-	datout.SetGeoTransform(meta[2])
-	datout.SetProjection(meta[1])
-	nanmask = demdata != meta[6]
-	outdata_m = np.flipud(outdata * nanmask)
-	outdata_m = np.where(outdata_m==0,-9999,outdata_m)
-	datout.GetRasterBand(1).WriteArray(outdata_m)
-	datout.GetRasterBand(1).SetNoDataValue(-9999)
-	datout.GetRasterBand(1).ComputeStatistics(True)
-	datout = None
-	print "datawrite returns: ",filnm
-	return filnm
-#
 def varestplt(DE,GE,GEest,GErsqrd,nuggest,sillest,rangeest,name,outDir,G_mod_export,G_mod_export_rsqrd,model):
 	'''Plot variogram estimate (kriging)'''
 	## Called by: modelPlotter
@@ -1121,23 +1060,31 @@ def krigplot(Xg1,Yg1,X,Y,Z,DEMmdZ_,name,outDir):
 	#print name,type(DEMmdZ_)
 	currentmin = DEMmdZ_.min()
 	currentmax = DEMmdZ_.max()
+	print "Kriged values range from {0:.3f} to {1:.3f}\n".format(currentmin, currentmax)
 	plt.figure(figsize=(16,8),facecolor='w')
-	if currentmin >-1.5 and currentmax <1.5:
+	if currentmin > -1.5 and currentmax < 1.5:
+		print "-1.5 to 1.5"
 		h = plt.pcolor(Xg1,Yg1,DEMmdZ_,cmap=plt.cm.RdBu, vmax = 1.5, vmin = -1.5)
 		plt.scatter(X, Y, c=Z, cmap=plt.cm.RdBu, vmax = 1.5, vmin = -1.5, hold=True)
-	elif currentmin >-3.0 and currentmax <3.0:
+	elif currentmin > -3.0 and currentmax < 3.0:
+		print "-3.0 to 3.0"
 		h = plt.pcolor(Xg1,Yg1,DEMmdZ_,cmap=plt.cm.RdBu, vmax = 3.0, vmin = -3.0)
 		plt.scatter(X, Y, c=Z, cmap=plt.cm.RdBu, vmax = 3.0, vmin = -3.0, hold=True)
-	elif currentmin >-5.0 and currentmax <5.0:
+	elif currentmin > 0 and currentmax < 3.0:
+		print "0 to 3.0"
+		h = plt.pcolor(Xg1,Yg1,DEMmdZ_,cmap=plt.cm.RdBu, vmax = 3.0, vmin = 0)
+		plt.scatter(X, Y, c=Z, cmap=plt.cm.RdBu, vmax = 3.0, vmin = 0, hold=True)
+	elif currentmin > -5.0 and currentmax < 5.0:
+		print "-5.0 to 5.0"
 		h = plt.pcolor(Xg1,Yg1,DEMmdZ_,cmap=plt.cm.RdBu, vmax = 5.0, vmin = -5.0)
 		plt.scatter(X, Y, c=Z, cmap=plt.cm.RdBu, vmax = 5.0, vmin = -5.0, hold=True)
-	elif currentmax <6:
+	elif currentmax < 6:
+		print "<6"
 		h = plt.pcolor(Xg1,Yg1,DEMmdZ_,cmap=plt.cm.Reds, vmax = 5, vmin = 0)
 		plt.scatter(X, Y, c=Z, cmap=plt.cm.RdBu, vmax = 5, vmin = 0, hold=True)
 	else:
-		soddincmmap = plt.cm.Blues
-		soddincmmap.set_under(color='k')
-		h = plt.pcolor(Xg1,Yg1,DEMmdZ_,cmap=soddincmmap, vmax = int(currentmax), vmin = int(currentmin))
+		print "Otherwise"
+		h = plt.pcolor(Xg1,Yg1,DEMmdZ_,cmap=plt.cm.Blues, vmax = int(currentmax), vmin = int(currentmin))
 		plt.scatter(X, Y, c=Z, cmap=plt.cm.RdBu, vmax = int(currentmax), vmin = int(currentmin), hold=True)
 	titletext = name + ' Kriging Estimate'
 	plt.title(titletext)

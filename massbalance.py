@@ -60,6 +60,7 @@ from standard import *
 from spatialfiles import *
 from kriging import *
 #
+# To do: simple extrapolation not implemented yet.
 ## FUNCTIONS
 #
 def envset(*args):
@@ -162,11 +163,11 @@ def envset(*args):
 def cont():
 	'''Simple function to break script flow'''
 	#Called by:
-	print '\n'*2,'*'*10
+	print "*"*20
 	answers = ['c','y','s','e']
 	a = ''
 	while a not in answers:
-		a = raw_input('\nDo you wish to continue (y or c), skip (s) or end (e)?: ')
+		a = raw_input('\nDo you wish to continue (y or c), skip (s) or end (e)?:\n')
 	if a == 'e':
 		sys.exit(0)
 	elif a == 's':
@@ -241,7 +242,7 @@ def convertProbing(settings, densityVectors, densityFiles):
 	colConv = 'Depth'
 	# Ask for column to be converted. Give headers present but offer 'Depth' as default
 	print 'Column headers in input file.\n',colNames
-	qus2 = 'Use '+colConv+'? (y)'
+	qus2 = 'Use "'+colConv+'"? (y)'
 	ans2 = raw_input(qus2)
 	if ans2 != 'y':
 		colConv = ''
@@ -306,8 +307,6 @@ def krigAcc(settings, sourceFolder, sourceFile):
 	print krigAcc.__doc__,'\n','_'*20,'\n'
 	time_three = datetime.now()
 	print time_three.strftime('\n3. started at day:%j %H:%M:%S')
-	#settings['Input Data Folder'] = sourceFolder
-	#settings['Data Files'] = sourceFile
 	# Call kriging function
 	DEM = settings['DEM']
 	dataFile = os.path.join(sourceFolder,sourceFile)
@@ -336,7 +335,7 @@ def sliceDEM(settings,slice=20):
 #
 #
 def acc2bands(settings,krigedFile,demSlcDir):
-	'''5. MULTIPLY THE MASS BALANCE LAYER BY THE ELEVATION BANDS
+	'''5. MULTIPLY THE ACCUMULATION LAYER BY THE ELEVATION BANDS
 	Requires "settings" and krigedFile,demSlcDir.
 	demSlcDir comes from sliceDEM and is a folder containing the elevation bands.'''
 	#
@@ -426,7 +425,7 @@ def krigAbl(settings, sourceFolder, sourceFile):
 	'''7. KRIG ABLATION FILE ACROSS DEM
 	Requires "settings" and sourceFolder, sourceFile'''
 	#
-	print krigAcc.__doc__,'\n','_'*20,'\n'
+	print krigAbl.__doc__,'\n','_'*20,'\n'
 	time_seven = datetime.now()
 	print time_seven.strftime('\n7. started at day:%j %H:%M:%S')
 	#settings['Input Data Folder'] = sourceFolder
@@ -441,11 +440,11 @@ def krigAbl(settings, sourceFolder, sourceFile):
 #
 #
 def abl2bands(settings,krigedFile,demSlcDir):
-	'''8. MULTIPLY THE MASS BALANCE LAYER BY THE ELEVATION BANDS
+	'''8. MULTIPLY THE ABLATION LAYER BY THE ELEVATION BANDS
 	Requires "settings" and krigedFile,demSlcDir.
 	demSlcDir comes from sliceDEM and is a folder containing the elevation bands.'''
 	#
-	print acc2bands.__doc__,'\n','_'*20,'\n'
+	print abl2bands.__doc__,'\n','_'*20,'\n'
 	time_eight = datetime.now()
 	print time_eight.strftime('\n8. started at day:%j %H:%M:%S')
 	flist = os.listdir(demSlcDir)
@@ -460,11 +459,20 @@ def abl2bands(settings,krigedFile,demSlcDir):
 
 #
 def main():
+	print "This programme goes step by step through the calculation of surface mass balance using accumulation and ablation data"
+	print "The required source files are:"
+	print "1. density by depth"
+	print "2. snow depth probings (with coordinates)"
+	print "3. ablation stake readings (with coordinates)"
+	print "4. a DEM of the glacier"
+	print "5. a mask of the DEM"
+	print "\nThe source files are set in the ''settings.txt'' file"
+	print "\nNote that the data is split into elevation bands after kriging/extrapolation."
 	# READ SETTINGS FILE
 	settings, envFile = envset()
 	#
 	# Ask whether to continue
-	print readDensity.__doc__,' is next.\n'
+	print readDensity.__doc__
 	contAns = cont()
 	#
 	#
@@ -472,7 +480,7 @@ def main():
 		# READ DENSITY DATA
 		densityVectors, densityFiles = readDensity(settings)
 	# Ask whether to continue
-	print convertProbing.__doc__,'\n is next.\n'
+	print convertProbing.__doc__
 	contAns = cont()
 	#
 	#
@@ -480,7 +488,7 @@ def main():
 		# CONVERT PROBING DEPTHS TO M W.E. (ACCUMULATION)
 		sourceFolderAcc, sourceFileAcc, densFunc = convertProbing(settings, densityVectors, densityFiles)
 	# Ask whether to continue
-	print krigAcc.__doc__,'\n is next.\n'
+	print krigAcc.__doc__
 	contAns = cont()
 	#
 	#
@@ -488,7 +496,7 @@ def main():
 		# KRIG ACCUMULATION
 		accumulationK = krigAcc(settings,sourceFolderAcc, sourceFileAcc)
 	# Ask whether to continue
-	print sliceDEM.__doc__,'\n is next.\n'
+	print sliceDEM.__doc__
 	contAns = cont()
 	#
 	#
@@ -496,7 +504,7 @@ def main():
 		# SLICE THE DEM INTO ELEVATION BANDS
 		demSlcDir = sliceDEM(settings,20)
 	# Ask whether to continue
-	print acc2bands.__doc__,'\n is next.\n'
+	print acc2bands.__doc__
 	contAns = cont()
 	#
 	#
@@ -504,7 +512,7 @@ def main():
 		# SPLIT THE ACCUMULATION INTO ELEVATION BANDS
 		acc2bands(settings,accumulationK,demSlcDir)
 	# Ask whether to continue
-	print readStakes.__doc__,'\n is next.\n'
+	print readStakes.__doc__
 	contAns = cont()
 	#
 	#
@@ -512,7 +520,7 @@ def main():
 		# READ ABLATION STAKES AND CONVERT TO m w.e.
 		sourceFolderAbl, sourceFileAbl = readStakes(settings, densFunc)
 	# Ask whether to continue
-	print krigAbl.__doc__,'\n is next.\n'
+	print krigAbl.__doc__
 	contAns = cont()
 	#
 	#
@@ -520,7 +528,7 @@ def main():
 		# KRIG OR INTERPOLATE ABLATION
 		ablationK = krigAbl(settings, sourceFolderAbl, sourceFileAbl)
 	# Ask whether to continue
-	print abl2bands.__doc__,'\n is next.\n'
+	print abl2bands.__doc__
 	contAns = cont()
 	#
 	#

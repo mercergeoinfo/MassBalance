@@ -17,7 +17,7 @@ import os
 # import csv
 # import pickle
 # import time
-# from datetime import datetime, timedelta
+from datetime import datetime, timedelta
 # import subprocess
 # import urllib2
 # import os.path
@@ -907,4 +907,21 @@ def GetRasterVals(x,y, raster, transf, bandcount):
 		intval = struct.unpack(fmt , structval)
 		vals[i] = intval[0]
 	return vals
-
+#
+def datawrite(outdata,demdata,meta,name,outDir):
+	'''Write an array of grid data to a georeferenced raster file'''
+	#meta = ['projection','geotransform','driver','rows','columns','nanvalue']
+	filnm = os.path.join(outDir,(name + '.tif'))
+	datdriver = gdal.GetDriverByName( "GTiff" )
+	datout = datdriver.Create(filnm,meta[5],meta[4],1,gdal.GDT_Float32)
+	datout.SetGeoTransform(meta[2])
+	datout.SetProjection(meta[1])
+	nanmask = demdata != meta[6]
+	outdata_m = np.flipud(outdata * nanmask)
+	outdata_m = np.where(outdata_m==0,-9999,outdata_m)
+	datout.GetRasterBand(1).WriteArray(outdata_m)
+	datout.GetRasterBand(1).SetNoDataValue(-9999)
+	datout.GetRasterBand(1).ComputeStatistics(True)
+	datout = None
+	print "datawrite returns: ",filnm
+	return filnm
