@@ -751,12 +751,6 @@ def detrend(X,Y,Z,Xg,Yg,Xg1):
 		Z_retrend = Z_retrend_in.reshape(np.shape(Xg1))
 		return Zdtr, Z_retrend
 #
-def fitFunc(xvec,yvec,fitOrder=1):
-	"""Create least squares fitted function through data"""
-	z = np.polyfit(np.array(xvec), np.array(yvec), fitOrder)
-	p = np.poly1d(z)
-	return p
-#
 def maplot(x,y,z,c,m,name,outDir):
 	plt.figure()
 	plt.autoscale(enable=True, axis='both', tight=False)

@@ -178,52 +178,83 @@ def cont():
 	return ans
 #
 def readDensity(settings):
-	'''1. READ DENSITY PROFILE DATA FROM CSV AND CREATE DENSITY PROFILE FROM IT
-	Requires "settings".'''
+	'''1. READ DENSITY PROFILE DATA FROM CSV AND CREATE DENSITY FUNCTION FROM IT
+	or ENTER MANUALLY (a + bx + cx^2 + dx^3)'''
+	# Requires "settings".
 	#
 	print readDensity.__doc__,'\n','_'*20,'\n'
-	time_one = datetime.now()
-	print time_one.strftime('\n1. started at day:%j %H:%M:%S')
-	# Process files into dictionary
 	densityVectors = {}
-	for file in settings['Density']:
-		dfile = os.path.join(settings['Input Data Folder'],file)
-		densityVectors[file] = import2vector(dfile)
-	# Create least squares fitted functions
-	densityFiles = densityVectors.keys()
-	#outDir = os.path.join(settings['Write Folder'],'Density')
-	outDir = settings['Write Folder']
-	if not os.path.exists(outDir):
-		os.makedirs(outDir)
-	DPS =  open(os.path.join(outDir,'DensityPoly.txt'), 'a')
-	print 'Density files, with headers:'
-	for i in densityFiles:
-		xvec = 'Cumulative Snow'
-		yvec = 'Cumulative Mass'
-		print 'File: ',i, '\n'
-		for j in densityVectors[i].keys():
-			print j
-		qus1 = '\nUse '+xvec+' & '+yvec+'? (y)'
-		ans1 = raw_input(qus1)
-		if ans1 != 'y':
-			while xvec not in densityVectors[i].keys():
-				xvec = raw_input('Give name of X vector: ')
-			while yvec not in densityVectors[i].keys():
-				yvec = raw_input('Give name of Y vector: ')
-		densityVectors[i]['DensFunc1'] = fitFunc(densityVectors[i][xvec],densityVectors[i][yvec],1)
-		densityVectors[i]['DensFunc2'] = fitFunc(densityVectors[i][xvec],densityVectors[i][yvec],2)
-		densityVectors[i]['DensFunc3'] = fitFunc(densityVectors[i][xvec],densityVectors[i][yvec],3)
-		print i
-		print densityVectors[i]['DensFunc1']
-		print densityVectors[i]['DensFunc2']
-		print densityVectors[i]['DensFunc3']
-		DPS.write(str(i)+'\n')
-		DPS.write(str(densityVectors[i]['DensFunc1'])+'\n')
-		DPS.write(str(densityVectors[i]['DensFunc2'])+'\n')
-		DPS.write(str(densityVectors[i]['DensFunc3'])+'\n')
-	# Save data dictionary to pickle database
-	DPS.close()
-	picksave(densityVectors,'density',outDir)
+	typeans = ''
+	while typeans not in ['c','m']:
+		typeans = raw_input("Create function (c) or enter manually (m)")
+	if typeans == "c"
+		# Process files into dictionary
+		for file in settings['Density']:
+			dfile = os.path.join(settings['Input Data Folder'],file)
+			densityVectors[file] = import2vector(dfile)
+		# Create least squares fitted functions
+		densityFiles = densityVectors.keys()
+		#outDir = os.path.join(settings['Write Folder'],'Density')
+		outDir = settings['Write Folder']
+		if not os.path.exists(outDir):
+			os.makedirs(outDir)
+		DPS =  open(os.path.join(outDir,'DensityPoly.txt'), 'a')
+		print 'Density files, with headers:'
+		for i in densityFiles:
+			xvec = 'Cumulative Snow'
+			yvec = 'Cumulative Mass'
+			print 'File: ',i, '\n'
+			for j in densityVectors[i].keys():
+				print j
+			qus1 = '\nUse '+xvec+' & '+yvec+'? (y)'
+			ans1 = raw_input(qus1)
+			if ans1 != 'y':
+				while xvec not in densityVectors[i].keys():
+					xvec = raw_input('Give name of X vector: ')
+				while yvec not in densityVectors[i].keys():
+					yvec = raw_input('Give name of Y vector: ')
+			densityVectors[i]['DensFunc1'] = fitFunc(densityVectors[i][xvec],densityVectors[i][yvec],1)
+			densityVectors[i]['DensFunc2'] = fitFunc(densityVectors[i][xvec],densityVectors[i][yvec],2)
+			densityVectors[i]['DensFunc3'] = fitFunc(densityVectors[i][xvec],densityVectors[i][yvec],3)
+			print i
+			print densityVectors[i]['DensFunc1']
+			print densityVectors[i]['DensFunc2']
+			print densityVectors[i]['DensFunc3']
+			DPS.write(str(i)+'\n')
+			DPS.write(str(densityVectors[i]['DensFunc1'])+'\n')
+			DPS.write(str(densityVectors[i]['DensFunc2'])+'\n')
+			DPS.write(str(densityVectors[i]['DensFunc3'])+'\n')
+		# Save data dictionary to pickle database
+		DPS.close()
+	else typeans = "m":
+		print "Enter density/depth function (a + bx + cx^2 + dx^3)"
+		print "Linear function looks like this: a + bx + 0x^2 + 0x^3"
+		a = ''
+		while a == '':
+			try:
+				a = float(raw_input("a = "))
+			except:
+				a = ''
+		b = ''
+		while b == '':
+			try:
+				b = float(raw_input("b = "))
+			except:
+				b = ''
+		c = ''
+		while c == '':
+			try:
+				c = float(raw_input("c = "))
+			except:
+				c = ''
+		d = ''
+		while d == '':
+			try:
+				d = float(raw_input("d = "))
+			except:
+				d = ''
+		densityVectors[0] = np.poly1d(np.array([d,c,b,a]))
+		densityFiles = ''
 	print '\nOutput to ',settings['Write Folder'],'\n'
 	return densityVectors, densityFiles
 #
@@ -233,8 +264,6 @@ def convertProbing(settings, densityVectors, densityFiles):
 	Requires "settings" and densityVectors, densityFiles from "readDensity" '''
 	#
 	print convertProbing.__doc__,'\n','_'*20,'\n'
-	time_two = datetime.now()
-	print time_two.strftime('\n2. started at day:%j %H:%M:%S')
 	# Read csv file containing probing data
 	File = csv.reader(open(os.path.join(settings['Input Data Folder'],settings['Probing']),'rb'), delimiter=',', quotechar='|')
 	# Read first line as header into a list
@@ -258,30 +287,33 @@ def convertProbing(settings, densityVectors, densityFiles):
 		print '\n Set conversion factor to 1 as given value not valid.\n'
 	# Show the choice of density functions available
 	print 'Density functions:'
-	for i in densityFiles:
-		print 'File: ',i
-		keys = densityVectors[i].keys()
-		fun2=[]
-		for fun1 in keys:
-			if 'DensFunc' in fun1:
-				print fun1
-				fun2.append(fun1)
-	# Chose the function to use by file and function (for multiple density pits and fits)
-	fileChoice = ''
-	while fileChoice not in densityFiles:
-		fileChoice = raw_input('\nEnter density file name (or "Enter" for first file): ')
-		if fileChoice == '': fileChoice = densityFiles[0]
-	funcChoice = ''
-	while funcChoice not in fun2:
-		print 'Functions: ',fun2
-		funcChoice = raw_input('\nEnter function or press "Enter" for DensFunc1: ')
-		if funcChoice == '': funcChoice = 'DensFunc1'
-	func = densityVectors[fileChoice][funcChoice]
+	if len(densityFiles) > 0:
+		for i in densityFiles:
+			print 'File: ',i
+			keys = densityVectors[i].keys()
+			fun2=[]
+			for fun1 in keys:
+				if 'DensFunc' in fun1:
+					print fun1
+					fun2.append(fun1)
+		# Chose the function to use by file and function (for multiple density pits and fits)
+		fileChoice = ''
+		while fileChoice not in densityFiles:
+			fileChoice = raw_input('\nEnter density file name (or "Enter" for first file): ')
+			if fileChoice == '': fileChoice = densityFiles[0]
+		funcChoice = ''
+		while funcChoice not in fun2:
+			print 'Functions: ',fun2
+			funcChoice = raw_input('\nEnter function or press "Enter" for DensFunc1: ')
+			if funcChoice == '': funcChoice = 'DensFunc1'
+		func = densityVectors[fileChoice][funcChoice]
+	else:
+		func = densityVectors[0]
 	# Write converted data back to csv file
 	outName,_,_,_ = namer(settings['Probing'])
 	outDataNamestr = os.path.basename(outName + '_e.csv')
 	csvOut = open(os.path.join(settings['Write Folder'],outDataNamestr),'wb')
-	#colNames.append(colConv +'X' +	 funcChoice)
+	#colNames.append(colConv +'X' + funcChoice)
 	colNames.append('mwe')
 	Header = ','.join(colNames) + '\n'
 	csvOut.write(Header)
@@ -305,22 +337,20 @@ def krigAcc(settings, sourceFolder, sourceFile):
 	Requires "settings" and sourceFolder, sourceFile'''
 	#
 	print krigAcc.__doc__,'\n','_'*20,'\n'
-	time_three = datetime.now()
-	print time_three.strftime('\n3. started at day:%j %H:%M:%S')
 	DEM = settings['DEM']
 	dataFile = os.path.join(sourceFolder,sourceFile)
 	# Ask user whether to krig or run IDW
 	krgorext = ""
 	while krgorext not in ["k","i"]:
 		krgorext = raw_input("Krig (k) a surface or use inverse distance weighting (i)? ")
-	if krgorext == "k"
+	if krgorext == "k":
 		# Call kriging function
 		outFile = kriging(dataFile,DEM)
-		_,_,Dir,_ = namer(krigedFile)
+		_,_,Dir,_ = namer(outFile)
 	else:
 	# Call idw function
 		outFile = idw(dataFile,DEM)
-		_,_,Dir,_ = namer(krigedFile)
+		_,_,Dir,_ = namer(outFile)
 	print 'Output to ',Dir,'\n'
 	return outFile
 #
@@ -330,8 +360,6 @@ def sliceDEM(settings,slice=20):
 	Requires "settings" for DEM file and optional elevation slice. Default is 20m.'''
 	#
 	print sliceDEM.__doc__,'\n','_'*20,'\n'
-	time_four = datetime.now()
-	print time_four.strftime('\n4. started at day:%j %H:%M:%S')
 	# Set the elevation interval for the DEM bands (m).
 	#slice = 20
 	demSlcNm,demSlcExt,demSlcPth,demSlcNmEx = namer(settings['DEM'])
@@ -349,8 +377,6 @@ def acc2bands(settings,krigedFile,demSlcDir):
 	demSlcDir comes from sliceDEM and is a folder containing the elevation bands.'''
 	#
 	print acc2bands.__doc__,'\n','_'*20,'\n'
-	time_five = datetime.now()
-	print time_five.strftime('\n5. started at day:%j %H:%M:%S')
 	flist = os.listdir(demSlcDir)
 	name,ext,path,namefull = namer(krigedFile)
 	outname = name+'_bands'
@@ -368,8 +394,6 @@ def readStakes(settings, densFunc):
 	Requires "settings" and densFunc from convertProbing'''
 	#
 	print readStakes.__doc__,'\n','_'*20,'\n'
-	time_six = datetime.now()
-	print time_six.strftime('\n6. started at day:%j %H:%M:%S')
 	# Read csv file containing stake data
 	File = csv.reader(open(os.path.join(settings['Input Data Folder'],settings['Stakes']),'rb'), delimiter=',', quotechar='|')
 	# Read first line as header into a list
@@ -431,29 +455,26 @@ def readStakes(settings, densFunc):
 #
 #
 def krigAbl(settings, sourceFolder, sourceFile):
-	'''7. KRIG ABLATION FILE ACROSS DEM
+	'''7. KRIG OR EXTRAPOLATE ABLATION FILE ACROSS DEM
 	Requires "settings" and sourceFolder, sourceFile'''
 	#
 	print krigAbl.__doc__,'\n','_'*20,'\n'
-	time_seven = datetime.now()
-	print time_seven.strftime('\n7. started at day:%j %H:%M:%S')
 	DEM = settings['DEM']
 	dataFile = os.path.join(sourceFolder,sourceFile)
 	# Ask user whether to krig or run IDW
 	krgorext = ""
 	while krgorext not in ["k","i"]:
 		krgorext = raw_input("Krig (k) a surface or use inverse distance weighting (i)? ")
-	if krgorext == "k"
+	if krgorext == "k":
 		# Call kriging function
 		outFile = kriging(dataFile,DEM)
-		_,_,Dir,_ = namer(krigedFile)
+		_,_,Dir,_ = namer(outFile)
 	else:
 	# Call idw function
 		outFile = idw(dataFile,DEM)
-		_,_,Dir,_ = namer(krigedFile)
+		_,_,Dir,_ = namer(outFile)
 	print 'Output to ',Dir,'\n'
 	return outFile
-
 #
 #
 def abl2bands(settings,krigedFile,demSlcDir):
@@ -461,9 +482,6 @@ def abl2bands(settings,krigedFile,demSlcDir):
 	Requires "settings" and krigedFile,demSlcDir.
 	demSlcDir comes from sliceDEM and is a folder containing the elevation bands.'''
 	#
-	print abl2bands.__doc__,'\n','_'*20,'\n'
-	time_eight = datetime.now()
-	print time_eight.strftime('\n8. started at day:%j %H:%M:%S')
 	flist = os.listdir(demSlcDir)
 	name,ext,path,namefull = namer(krigedFile)
 	outname = name+'_bands'
@@ -473,7 +491,19 @@ def abl2bands(settings,krigedFile,demSlcDir):
 	rasXras(flist,demSlcDir,krigedFile,outfolder)
 	print 'Output to ',outfolder,'\n'
 	return 0
-
+#
+#
+def calcNet(settings, accumulationK, ablationK):
+	'''SUBTRACT ABLATION RASTER FROM ACCUMULATION RATSER TO CALCULATE GLACIERWIDE NET BALANCE'''
+	print "Not Ready yet"
+	return 0
+#
+#
+def printRes():
+	'''PRINT RESULTS AS TEXT FILE AND TO SCREEN'''
+	print "Not ready yet"
+	return 0
+#
 #
 def main():
 	print "This programme goes step by step through the calculation of surface mass balance using accumulation and ablation data"
@@ -552,8 +582,22 @@ def main():
 	if contAns == 0:
 		# SPLIT ABLATION INTO ELEVATION BANDS
 		abl2bands(settings,ablationK,demSlcDir)
+	print calcNet.__doc__
+	contAns = cont()
+	#
+	#
 	# CALCULATE NET BALANCE
+	if contAns == 0:
+		calcNet(settings, accumulationK, ablationK)
+	# Ask whether to continue
+	print printRes.__doc__
+	contAns = cont()
+	#
+	#
 	# PRINT RESULTS
+		if contAns == 0:
+		printRes()
+	#
 	return 0
 #
 if __name__ == "__main__":

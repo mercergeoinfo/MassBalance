@@ -973,7 +973,6 @@ def vrtMaker(fileName):
 		Xcol = 'field_1'
 		Ycol = 'field_2'
 		Zcol = 'field_3'
-	#
 	epsgList = ['3006','3021','7030']
 	nameList = ['SWEREF99TM','RT90 2,5gV','WGS84']
 	for i in range(len(nameList)):
@@ -981,10 +980,34 @@ def vrtMaker(fileName):
 	epsg = ''
 	while epsg not in epsgList:
 		epsg = raw_input('Enter epsg code for source file coordinate system: ')
-	#
 	namevrt = makevrt(fileName,epsg,Xcol,Ycol,Zcol)
-	#
 	return Zcol, namevrt, epsg
+#
+def makevrt(fileName,epsg,Xcol,Ycol,Zcol='none'):
+	layername,ext,path,namefull = namer(fileName)
+	line1 = '<OGRVRTDataSource>\n'
+	line2 = '<OGRVRTLayer name="'+layername+'">\n'
+	line3 = '<SrcDataSource>'+layername+'.csv</SrcDataSource>\n'
+	line4 = '<GeometryType>wkbPoint</GeometryType>\n'
+	line4a = '<LayerSRS>EPSG:'+epsg+'</LayerSRS>\n'
+	if Zcol != 'none': line5 = '<GeometryField encoding="PointFromColumns" x="'+Xcol+'" y="'+Ycol+'" z="'+Zcol+'"/>\n'
+	elif Zcol == 'none': line5 = '<GeometryField encoding="PointFromColumns" x="'+Xcol+'" y="'+Ycol+'"/>\n'
+	else: return 1
+	line6 = '</OGRVRTLayer>\n'
+	line7 = '</OGRVRTDataSource>\n'
+	#
+	vrtName = layername + '.vrt'
+	outName = os.path.join(path,vrtName)
+	with open(outName,'ab') as OutFile:
+		OutFile.write(line1)
+		OutFile.write(line2)
+		OutFile.write(line3)
+		OutFile.write(line4)
+		OutFile.write(line4a)
+		OutFile.write(line5)
+		OutFile.write(line6)
+		OutFile.write(line7)
+	return outName
 #
 def idw(dataFile,DEM):
 	'''Implement gdalgrid for IDW'''

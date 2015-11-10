@@ -202,4 +202,9 @@ def nancov(m):
 	print 'Covariance matrix:\n',mcov
 	return mcov, mdevscore, mavg[0]
 #
-
+#
+def fitFunc(xvec,yvec,fitOrder=1):
+	"""Create least squares fitted function through data"""
+	z = np.polyfit(np.array(xvec), np.array(yvec), fitOrder)
+	p = np.poly1d(z)
+	return p
