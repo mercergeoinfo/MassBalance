@@ -24,6 +24,12 @@ import pickle
 # import zipfile
 # import StringIO
 #
+## IMAGE MANIPULATION
+# import cv2
+# import PIL
+# from PIL import Image
+# from PIL.GifImagePlugin import getheader, getdata
+#
 ## SCIENTIFIC
 # import math
 from math import *

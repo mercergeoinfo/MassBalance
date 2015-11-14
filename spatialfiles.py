@@ -24,6 +24,12 @@ from datetime import datetime, timedelta
 # import zipfile
 # import StringIO
 #
+## IMAGE MANIPULATION
+import cv2
+# import PIL
+# from PIL import Image
+# from PIL.GifImagePlugin import getheader, getdata
+#
 ## SCIENTIFIC
 # import math
 from math import *
@@ -195,6 +201,11 @@ def rasterImport(file):
 	numvals = len(sumvals)
 	avval = sumval/numvals
 	volvals = sumval*(math.fabs((transf[1]*transf[5])))
+	meanvals = np.mean(sumvals)
+	medianvals = np.median(sumvals)
+	stdvals = np.std(sumvals)
+	print file
+	print "Min: {0:0.3f} Mean: {1:0.3f} StdDev: {2:0.3f} Max: {3:0.3f} Median: {4:0.3f}\n".format(mindat, meanvals, maxdat, stdvals, medianvals)
 	meta = {'transform':transf,'projection':projec,'corners':corners,'dimension':dims,'dats':dats,'sumval':sumval,'numvals':numvals,'avval':avval,'volvals':volvals}
 	if srs.IsProjected:
 		print 'projcs 1: ',srs.GetAttrValue('projcs')
@@ -1035,3 +1046,40 @@ def idw(dataFile,DEM):
 	gridout = "gdal_grid -a invdist:power={0:0.2f}:smoothing={1:0.2f} -txe {2:0.0f} {3:0.0f} -tye {4:0.0f} {5:0.0f} -outsize {5:0.0f} {6:0.0f} -a_srs EPSG:{7} -of GTiff -ot Float64 -l {8} {9} {10}".format(power, smoothing, txel, txeu, tyel, tyeu, outsider, outsidec, epsg, layer, namevrt, idwfile)
 	os.system(gridout)
 	return idwfile
+#
+def canny(file,low,high):
+	'''Canny edge detection using opencv (cv2)
+	To use: outputfile = canny(file,low,high)
+	file = path to image file
+	low = lower threshold for edge detection
+	high = upper threshold, above which edge is detected
+	See # http://docs.opencv.org/master/dc/d2e/tutorial_py_image_display.html#gsc.tab=0'''
+	# Check if file is image
+	if os.path.isfile(file):
+		print "File OK"
+	else:
+		sys.exit("Bummer man!")
+	# Get name etc for output
+	name,ext,path,namefull = namer(file)
+	# Read image file and leave unchanged (preserve alpha and colour)
+	img = cv2.imread(file,cv2.IMREAD_UNCHANGED)
+	# Convert to uint8 for processing
+	img = img.astype(np.uint8)
+	# Process image for edges
+	edges = cv2.Canny(img,low,high)
+	# Display results and wait for user to kill image or save it
+	print "Press escape to kill image or 's' to save"
+	cv2.imshow('edges',edges)
+	k = cv2.waitKey(0) & 0xFF
+	if k == 27:         # wait for ESC key to exit
+		cv2.destroyAllWindows()
+		outfile = 0
+	elif k == ord('s'): # wait for 's' key to save and exit
+		outname = name + 'canny.' + ext
+		outfile = os.path.join(path, outname)
+		edges = edges.astype(np.uint16)
+		cv2.imwrite(outfile,edges)
+		cv2.destroyAllWindows()
+		print "Save to ", outfile
+		cv2.imwrite(outfile,edges)
+	return outfile
