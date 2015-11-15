@@ -36,7 +36,7 @@ from math import *
 import numpy as np
 import numpy.ma as ma
 import scipy.linalg
-# import scipy.stats as stats
+import scipy.stats as stats
 from scipy.stats.stats import nanmean
 # from scipy.stats import norm
 # from pandas import Series, DataFrame
@@ -44,6 +44,7 @@ from scipy.stats.stats import nanmean
 #
 ## GIS SUPPORT
 import gdal
+import osr
 # import gdalconst
 # from geostatsmodels import utilities, kriging, variograms, model, geoplot
 # from qgis.core import QgsProject
@@ -200,12 +201,15 @@ def rasterImport(file):
 	sumval = sumvals.sum()
 	numvals = len(sumvals)
 	avval = sumval/numvals
-	volvals = sumval*(math.fabs((transf[1]*transf[5])))
+	volvals = sumval*(fabs((transf[1]*transf[5])))
 	meanvals = np.mean(sumvals)
 	medianvals = np.median(sumvals)
 	stdvals = np.std(sumvals)
+	skewvals = stats.skew(sumvals)
+	kurtvals = stats.kurtosis(sumvals)
 	print file
-	print "Min: {0:0.3f} Mean: {1:0.3f} StdDev: {2:0.3f} Max: {3:0.3f} Median: {4:0.3f}\n".format(mindat, meanvals, maxdat, stdvals, medianvals)
+	print "Min: {0:0.3f} Mean: {1:0.3f} StdDev: {2:0.3f} Max: {3:0.3f} Median: {4:0.3f}\n".format(mindat, meanvals, stdvals, maxdat, medianvals)
+	print "Mean: {0:0.3f} StdDev {1:0.3f} Skewness: {2:0.3f} Kurtosis{3:0.3f}\n".format(meanvals, stdvals, skewvals, kurtvals)
 	meta = {'transform':transf,'projection':projec,'corners':corners,'dimension':dims,'dats':dats,'sumval':sumval,'numvals':numvals,'avval':avval,'volvals':volvals}
 	if srs.IsProjected:
 		print 'projcs 1: ',srs.GetAttrValue('projcs')
@@ -611,32 +615,32 @@ def xydiff(atype, bearing, distance):
 	"""Calculate the x and y coordinates (relative) from HD and Bearing"""
 	# Convert bearing to radians
 	if atype == 'd':
-		bearing = math.radians(bearing)
+		bearing = radians(bearing)
 	elif atype == 'g':
-		bearing = bearing * (math.pi / 200)
+		bearing = bearing * (pi / 200)
 	elif atype == 'r':
 		bearing = bearing
 	#
 	# Calculate difference in Easting
-	ediff = math.sin(bearing)*distance
+	ediff = sin(bearing)*distance
 	# Calculate difference in Northing
-	ndiff = math.cos(bearing)*distance
+	ndiff = cos(bearing)*distance
 	return  ediff, ndiff
 #
 def hordist(atype,vangle,slpdist):
 	"""Calculate the horisontal distance from the sloping distance and the vertical angle"""
 	# Convert angle to radians
 	if atype == 'd':
-		vangle = math.radians(vangle)
+		vangle = radians(vangle)
 	elif atype == 'g':
-		vangle = vangle * (math.pi / 200)
+		vangle = vangle * (pi / 200)
 	elif atype == 'r':
 		vangle = vangle
 	#
 	# Calculate horisontal distance
-	hdist = math.cos(vangle)*slpdist
+	hdist = cos(vangle)*slpdist
 	# Calculate height difference
-	vdist = math.sin(vangle)*slpdist
+	vdist = sin(vangle)*slpdist
 	#
 	return hdist, vdist
 #
@@ -898,8 +902,8 @@ def GetRasterVals(x,y, raster, transf, bandcount):
 		sys.exit(1)
 	rows = raster.RasterYSize
 	cols = raster.RasterXSize
-#	 xdifpix = math.floor((x - transf[0])/transf[1])
-#	 ydifpix = math.floor((y - transf[3])/transf[5])
+#	 xdifpix = floor((x - transf[0])/transf[1])
+#	 ydifpix = floor((y - transf[3])/transf[5])
 #	 xpix = xdifpix -1
 #	 ypix = ydifpix -1
 	xpix, ypix = gdal.ApplyGeoTransform(transfInv, x, y)
